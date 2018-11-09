@@ -12,9 +12,9 @@ namespace PlayferCode
     {
         static void Main(string[] args)
         {
-            var keyword = "testkeyword";
-            var textToEncode = @"dsoooo";
-
+            var keyword = "fire";
+            var textToEncode = @"IDIOCY OFTEN LOOKS LIKE INTELLIGENCE";
+            Console.Write("");
             var sw = Stopwatch.StartNew();
             var encoded = Encode(textToEncode.ToLower(), keyword.ToLower());
             Console.WriteLine(encoded);
@@ -29,26 +29,26 @@ namespace PlayferCode
         private static string Encode(string textToEncode, string keyword)
         {
             var matrix = BuildMatrix(keyword);
-
-            var textWithoutSpaces = textToEncode.Where(c => !char.IsWhiteSpace(c) && !char.IsSeparator(c)).ToList();
-            for (var i = 0; i < textWithoutSpaces.Count; i++)
+            var textWithoutSpaces = textToEncode.Where(c => !char.IsWhiteSpace(c) && !char.IsSeparator(c)).ToArray();
+            var bigramms = new List<string>();
+            for (var i = 0; i < textWithoutSpaces.Length;)
             {
-                if (i == textWithoutSpaces.Count - 1 )
+                if (i + 1 >= textWithoutSpaces.Length && textWithoutSpaces.Length % 2 != i % 2)
                 {
-                    if(textWithoutSpaces.Count % 2 == 1)
-                    {
-                        textWithoutSpaces.Add('x');
-                    }
+                    bigramms.Add(new string(new char[] { textWithoutSpaces[i], 'x' }));
                     break;
                 }
-                else if (textWithoutSpaces[i] == textWithoutSpaces[i + 1])
+                if (textWithoutSpaces[i] == textWithoutSpaces[i + 1])
                 {
-                    textWithoutSpaces.Insert(i + 1, 'x');
+                    bigramms.Add(new string(new char[] { textWithoutSpaces[i], 'x' }));
+                    i++;
+                    continue;
                 }
+                bigramms.Add(new string(new char[] { textWithoutSpaces[i], textWithoutSpaces[i + 1] }));
+                i += 2;
             }
-            var bigramms = textWithoutSpaces.Batch(2).Select(b => string.Join(string.Empty, b)).ToArray();
 
-            for (var i = 0; i < bigramms.Length; i ++)
+            for (var i = 0; i < bigramms.Count; i ++)
             {
                 var first = matrix.Find(bigramms[i][0]);
                 var second = matrix.Find(bigramms[i][1]);
@@ -65,8 +65,8 @@ namespace PlayferCode
                 }
                 if (first.Item2 == second.Item2)
                 {
-                    var firstReplacementPos = ((first.Item1 + 1) % matrix.GetUpperBound(0), first.Item2 );
-                    var secondReplacementPos = ((second.Item1 + 1) % matrix.GetUpperBound(0), second.Item2);
+                    var firstReplacementPos = ((first.Item1 + 1) % (matrix.GetUpperBound(0) + 1), first.Item2 );
+                    var secondReplacementPos = ((second.Item1 + 1) % (matrix.GetUpperBound(0) + 1), second.Item2);
                     bigramms[i] = new string(new char[]
                     {
                         matrix[firstReplacementPos.Item1, firstReplacementPos.Item2],
@@ -122,7 +122,7 @@ namespace PlayferCode
                 });
             }
 
-            return string.Join(string.Empty, bigramms);
+            return string.Join(string.Empty, bigramms.SelectMany(b => b).Where(c => c != 'x'));
         }
 
         private static char[,] BuildMatrix(IEnumerable<char> keyword)
